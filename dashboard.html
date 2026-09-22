@@ -53,7 +53,7 @@
 </div>
 
 <script>
-  const supabase = window.supabase.createClient(
+  const supabaseClient = window.supabase.createClient(
     'https://qoemogwiylsqquykgarn.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvZW1vZ3dpeWxzcXF1eWtnYXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNTk3NjgsImV4cCI6MjEwNTYzNTc2OH0.D6RZY7jM0zabetpv66CWz9hOJiexY2Wyeu-Y5HOL_XQ'
   );
@@ -64,13 +64,13 @@
   }
 
   async function loadStoreName() {
-    const { data } = await supabase.from('stores').select('store_name').eq('id', storeId).single();
+    const { data } = await supabaseClient.from('stores').select('store_name').eq('id', storeId).single();
     if (data) document.getElementById('store-name-label').textContent = data.store_name;
   }
   loadStoreName();
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     localStorage.removeItem('store_id');
     window.location.href = 'login.html';
   });
