@@ -16,7 +16,7 @@
   .nav-item:hover { background: #334155; }
   #logout-btn { margin-top: auto; padding: 14px 16px; cursor: pointer; font-size: 13px; color: #94a3b8; }
 
-  #main { flex: 1; overflow-y: auto; padding: 24px; }
+  #main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; }
 
   #mobile-header { display: none; background: #1e293b; color: white; padding: 12px 16px; align-items: center; justify-content: space-between; }
   #hamburger { font-size: 22px; cursor: pointer; }
@@ -29,8 +29,8 @@
     #main { padding: 16px; }
   }
 
-  .section { display: none; }
-  .section.active { display: block; }
+  .section { display: none; flex: 1; min-height: 0; }
+  .section.active { display: flex; flex-direction: column; }
 
   .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .page-header h2 { margin: 0; font-size: 18px; }
@@ -87,31 +87,70 @@
   .toggle-switch input:checked + .toggle-slider { background: #2563eb; }
   .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
   .plan-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #475569; }
-  #settings-save-btn { margin-top: 4px; }
   #settings-saved-msg { font-size: 13px; color: #16a34a; margin-top: 10px; display: none; }
+
+  /* ---------- Chat section ---------- */
+  #chat-container { flex: 1; display: flex; min-height: 0; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  #conversation-list { width: 300px; flex-shrink: 0; border-right: 1px solid #e5e7eb; overflow-y: auto; }
+  .convo-item { padding: 12px 14px; border-bottom: 1px solid #f1f1f1; cursor: pointer; }
+  .convo-item:hover { background: #f8fafc; }
+  .convo-item.selected { background: #eff6ff; }
+  .convo-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
+  .convo-preview { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .convo-time { font-size: 11px; color: #999; }
+  .convo-badge { background: #f59e0b; color: white; font-size: 10px; padding: 2px 6px; border-radius: 8px; }
+
+  #chat-window { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #chat-window-header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+  #chat-back-btn { display: none; cursor: pointer; font-size: 18px; }
+  #chat-window-messages { flex: 1; overflow-y: auto; padding: 14px; background: #f5f5f5; }
+  .chat-msg { margin-bottom: 10px; max-width: 70%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
+  .chat-msg.customer { background: white; border: 1px solid #ddd; }
+  .chat-msg.reply { margin-left: auto; color: white; }
+  .chat-msg.reply.ai { background: #2563eb; }
+  .chat-msg.reply.human { background: #16a34a; }
+  .chat-msg-label { font-size: 10px; opacity: 0.8; margin-bottom: 2px; }
+  #chat-window-input-row { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e5e7eb; }
+  #chat-reply-input { flex: 1; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+  #chat-empty-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px; }
+
+  @media (max-width: 768px) {
+    #chat-container { position: relative; }
+    #conversation-list { width: 100%; }
+    #chat-window { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; display: none; }
+    #chat-container.mobile-chat-open #conversation-list { display: none; }
+    #chat-container.mobile-chat-open #chat-window { display: flex; }
+    #chat-back-btn { display: inline; }
+  }
 </style>
 </head>
 <body>
 
 <div id="sidebar">
   <h2 id="store-name-label">My Store</h2>
-  <div class="nav-item" data-section="chat">Chat</div>
+  <div class="nav-item active" data-section="chat">Chat</div>
   <div class="nav-item" data-section="faq">FAQ Management</div>
   <div class="nav-item" data-section="promotions">Promotions</div>
   <div class="nav-item" data-section="customers">Customers</div>
-  <div class="nav-item active" data-section="settings">Settings</div>
+  <div class="nav-item" data-section="settings">Settings</div>
   <div id="logout-btn">Log out</div>
 </div>
 
-<div style="flex:1; display:flex; flex-direction:column;">
+<div style="flex:1; display:flex; flex-direction:column; min-width:0;">
   <div id="mobile-header">
     <span id="hamburger">☰</span>
-    <span id="mobile-title">Settings</span>
+    <span id="mobile-title">Chat</span>
   </div>
   <div id="main">
 
-    <div class="section" data-section="chat">
-      <p>This section is coming up next.</p>
+    <div class="section active" data-section="chat">
+      <div id="chat-container">
+        <div id="conversation-list"></div>
+        <div id="chat-window">
+          <div id="chat-empty-placeholder">Select a conversation to view messages</div>
+        </div>
+      </div>
     </div>
 
     <div class="section" data-section="faq">
@@ -140,7 +179,7 @@
       <div id="customer-empty-state" style="display:none;">No customers have left their details yet.</div>
     </div>
 
-    <div class="section active" data-section="settings">
+    <div class="section" data-section="settings">
       <div class="page-header">
         <h2>Settings</h2>
       </div>
@@ -234,7 +273,7 @@
   </div>
 </div>
 
-<!-- Chat history modal -->
+<!-- Chat history modal (used from Customers tab) -->
 <div id="history-modal-overlay">
   <div id="history-modal">
     <h3 id="history-modal-title">Chat History</h3>
@@ -291,6 +330,145 @@
     div.textContent = str || '';
     return div.innerHTML;
   }
+
+  function timeAgo(dateStr) {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  // ---------- Chat ----------
+
+  let selectedCustomerId = null;
+  let selectedCustomerLabel = '';
+  let chatPollInterval = null;
+  let listPollInterval = null;
+
+  async function loadConversations() {
+    const { data: convos } = await supabaseClient
+      .from('conversation_summary')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('last_message_at', { ascending: false });
+
+    const listEl = document.getElementById('conversation-list');
+
+    if (!convos || convos.length === 0) {
+      listEl.innerHTML = '<div style="padding:16px; color:#888; font-size:13px;">No conversations yet.</div>';
+      return;
+    }
+
+    const customerIds = convos.map((c) => c.customer_id);
+    const { data: customers } = await supabaseClient
+      .from('customers')
+      .select('id, name, phone')
+      .in('id', customerIds);
+
+    const customerMap = {};
+    (customers || []).forEach((c) => { customerMap[c.id] = c; });
+
+    listEl.innerHTML = '';
+    convos.forEach((convo) => {
+      const customer = customerMap[convo.customer_id] || { name: null, phone: '(unknown)' };
+      const label = customer.name || customer.phone;
+      const needsAttention = convo.last_status === 'pending_human' || convo.last_status === 'ai_fallback_pending_review';
+
+      const item = document.createElement('div');
+      item.className = 'convo-item' + (convo.customer_id === selectedCustomerId ? ' selected' : '');
+      item.innerHTML = `
+        <div class="convo-name">
+          <span>${escapeHtml(label)}</span>
+          ${needsAttention ? '<span class="convo-badge">Needs reply</span>' : ''}
+        </div>
+        <div class="convo-preview">${escapeHtml(convo.last_message || '(promotion / selection)')}</div>
+        <div class="convo-time">${timeAgo(convo.last_message_at)}</div>
+      `;
+      item.addEventListener('click', () => openConversation(convo.customer_id, label));
+      listEl.appendChild(item);
+    });
+  }
+
+  function openConversation(customerId, label) {
+    selectedCustomerId = customerId;
+    selectedCustomerLabel = label;
+    document.getElementById('chat-container').classList.add('mobile-chat-open');
+    loadConversations();
+    renderChatWindow();
+    loadMessages();
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(loadMessages, 5000);
+  }
+
+  function renderChatWindow() {
+    const windowEl = document.getElementById('chat-window');
+    windowEl.innerHTML = `
+      <div id="chat-window-header">
+        <span id="chat-back-btn">←</span>
+        <span>${escapeHtml(selectedCustomerLabel)}</span>
+      </div>
+      <div id="chat-window-messages"></div>
+      <div id="chat-window-input-row">
+        <input type="text" id="chat-reply-input" placeholder="Type a reply...">
+        <button class="btn" id="chat-reply-send">Send</button>
+      </div>
+    `;
+    document.getElementById('chat-back-btn').addEventListener('click', () => {
+      document.getElementById('chat-container').classList.remove('mobile-chat-open');
+    });
+    document.getElementById('chat-reply-send').addEventListener('click', sendHumanReply);
+    document.getElementById('chat-reply-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendHumanReply();
+    });
+  }
+
+  async function loadMessages() {
+    if (!selectedCustomerId) return;
+    const res = await fetch(API_URL + '/chat/history?store_id=' + storeId + '&customer_id=' + selectedCustomerId);
+    const data = await res.json();
+
+    const messagesEl = document.getElementById('chat-window-messages');
+    if (!messagesEl) return;
+    messagesEl.innerHTML = '';
+
+    data.forEach((row) => {
+      if (row.user_message) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg customer';
+        div.textContent = row.user_message;
+        messagesEl.appendChild(div);
+      }
+      if (row.ai_response) {
+        const repliedBy = row.replied_by === 'human' ? 'human' : 'ai';
+        const div = document.createElement('div');
+        div.className = 'chat-msg reply ' + repliedBy;
+        div.innerHTML = `<div class="chat-msg-label">${repliedBy === 'human' ? 'You' : 'AI'}</div>` + escapeHtml(row.ai_response);
+        messagesEl.appendChild(div);
+      }
+    });
+
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function sendHumanReply() {
+    const inputEl = document.getElementById('chat-reply-input');
+    const text = inputEl.value.trim();
+    if (!text || !selectedCustomerId) return;
+    inputEl.value = '';
+
+    await fetch(API_URL + '/human-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ store_id: storeId, customer_id: selectedCustomerId, message: text }),
+    });
+
+    loadMessages();
+    loadConversations();
+  }
+
+  loadConversations();
+  listPollInterval = setInterval(loadConversations, 10000);
 
   // ---------- FAQ Management ----------
 
