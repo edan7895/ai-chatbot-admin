@@ -28,14 +28,39 @@
     #mobile-header { display: flex; }
     #main { padding: 16px; }
   }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .page-header h2 { margin: 0; font-size: 18px; }
+  .btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+  .btn.secondary { background: #e5e7eb; color: #111; }
+  .btn.danger { background: #fee2e2; color: #b91c1c; }
+
+  .faq-card { background: white; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .faq-q { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .faq-a { font-size: 13px; color: #444; margin-bottom: 8px; white-space: pre-wrap; }
+  .faq-actions { display: flex; gap: 8px; }
+  .faq-actions button { font-size: 12px; padding: 5px 10px; }
+
+  #faq-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  #faq-modal-overlay.open { display: flex; }
+  #faq-modal { background: white; border-radius: 12px; padding: 20px; width: 400px; max-width: 90vw; }
+  #faq-modal h3 { margin-top: 0; font-size: 16px; }
+  #faq-modal textarea, #faq-modal input { width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
+  #faq-modal textarea { min-height: 70px; resize: vertical; }
+  #faq-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  #empty-state { color: #888; font-size: 14px; }
 </style>
 </head>
 <body>
 
 <div id="sidebar">
   <h2 id="store-name-label">我的商家</h2>
-  <div class="nav-item active" data-section="chat">聊天</div>
-  <div class="nav-item" data-section="faq">FAQ 管理</div>
+  <div class="nav-item" data-section="chat">聊天</div>
+  <div class="nav-item active" data-section="faq">FAQ 管理</div>
   <div class="nav-item" data-section="promotions">促销管理</div>
   <div class="nav-item" data-section="customers">顾客列表</div>
   <div class="nav-item" data-section="settings">设置</div>
@@ -45,10 +70,47 @@
 <div style="flex:1; display:flex; flex-direction:column;">
   <div id="mobile-header">
     <span id="hamburger">☰</span>
-    <span id="mobile-title">聊天</span>
+    <span id="mobile-title">FAQ 管理</span>
   </div>
   <div id="main">
-    <p>这里之后几个 Part 会陆续把每个区块的内容加进来。</p>
+
+    <div class="section" data-section="chat">
+      <p>这个区块之后再做。</p>
+    </div>
+
+    <div class="section active" data-section="faq">
+      <div class="page-header">
+        <h2>FAQ 管理</h2>
+        <button class="btn" id="add-faq-btn">+ 新增 FAQ</button>
+      </div>
+      <div id="faq-list"></div>
+      <div id="empty-state" style="display:none;">还没有任何 FAQ，点右上角新增一条吧。</div>
+    </div>
+
+    <div class="section" data-section="promotions">
+      <p>这个区块之后再做。</p>
+    </div>
+
+    <div class="section" data-section="customers">
+      <p>这个区块之后再做。</p>
+    </div>
+
+    <div class="section" data-section="settings">
+      <p>这个区块之后再做。</p>
+    </div>
+
+  </div>
+</div>
+
+<div id="faq-modal-overlay">
+  <div id="faq-modal">
+    <h3 id="faq-modal-title">新增 FAQ</h3>
+    <input type="text" id="faq-question-input" placeholder="顾客可能会怎么问？">
+    <textarea id="faq-answer-input" placeholder="标准答案"></textarea>
+    <div id="faq-modal-actions">
+      <button class="btn secondary" id="faq-cancel-btn">取消</button>
+      <button class="btn" id="faq-save-btn">保存</button>
+    </div>
   </div>
 </div>
 
@@ -57,6 +119,8 @@
     'https://qoemogwiylsqquykgarn.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvZW1vZ3dpeWxzcXF1eWtnYXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNTk3NjgsImV4cCI6MjEwNTYzNTc2OH0.D6RZY7jM0zabetpv66CWz9hOJiexY2Wyeu-Y5HOL_XQ'
   );
+
+  const API_URL = 'https://ai-chatbot-backend-gxcj.onrender.com';
 
   const storeId = localStorage.getItem('store_id');
   if (!storeId) {
@@ -81,12 +145,106 @@
 
   document.querySelectorAll('.nav-item[data-section]').forEach((item) => {
     item.addEventListener('click', () => {
+      const target = item.getAttribute('data-section');
       document.querySelectorAll('.nav-item[data-section]').forEach((i) => i.classList.remove('active'));
       item.classList.add('active');
+      document.querySelectorAll('.section[data-section]').forEach((s) => s.classList.remove('active'));
+      document.querySelector('.section[data-section="' + target + '"]').classList.add('active');
       document.getElementById('mobile-title').textContent = item.textContent.trim();
       document.getElementById('sidebar').classList.remove('open');
     });
   });
+
+  // ---------- FAQ 管理 ----------
+
+  let editingFaqId = null;
+
+  async function loadFaqs() {
+    const { data } = await supabaseClient
+      .from('store_faqs')
+      .select('id, question, answer')
+      .eq('store_id', storeId)
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('faq-list');
+    const emptyEl = document.getElementById('empty-state');
+    listEl.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    data.forEach((faq) => {
+      const card = document.createElement('div');
+      card.className = 'faq-card';
+      card.innerHTML = `
+        <div class="faq-q">${escapeHtml(faq.question)}</div>
+        <div class="faq-a">${escapeHtml(faq.answer)}</div>
+        <div class="faq-actions">
+          <button class="btn secondary edit-btn">编辑</button>
+          <button class="btn danger delete-btn">删除</button>
+        </div>
+      `;
+      card.querySelector('.edit-btn').addEventListener('click', () => openFaqModal(faq));
+      card.querySelector('.delete-btn').addEventListener('click', () => deleteFaq(faq.id));
+      listEl.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function openFaqModal(faq) {
+    editingFaqId = faq ? faq.id : null;
+    document.getElementById('faq-modal-title').textContent = faq ? '编辑 FAQ' : '新增 FAQ';
+    document.getElementById('faq-question-input').value = faq ? faq.question : '';
+    document.getElementById('faq-answer-input').value = faq ? faq.answer : '';
+    document.getElementById('faq-modal-overlay').classList.add('open');
+  }
+
+  function closeFaqModal() {
+    document.getElementById('faq-modal-overlay').classList.remove('open');
+  }
+
+  document.getElementById('add-faq-btn').addEventListener('click', () => openFaqModal(null));
+  document.getElementById('faq-cancel-btn').addEventListener('click', closeFaqModal);
+
+  document.getElementById('faq-save-btn').addEventListener('click', async () => {
+    const question = document.getElementById('faq-question-input').value.trim();
+    const answer = document.getElementById('faq-answer-input').value.trim();
+    if (!question || !answer) {
+      alert('问题和答案都要填喔');
+      return;
+    }
+
+    if (editingFaqId) {
+      // 编辑：只改文字，不重新算向量（问法没变，语义不用重算）
+      await supabaseClient.from('store_faqs').update({ question, answer }).eq('id', editingFaqId);
+    } else {
+      // 新增：交给后端 API，因为要算向量（Embedding），前端算不了
+      await fetch(API_URL + '/faq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store_id: storeId, question, answer }),
+      });
+    }
+
+    closeFaqModal();
+    loadFaqs();
+  });
+
+  async function deleteFaq(id) {
+    if (!confirm('确定要删除这条 FAQ 吗？')) return;
+    await supabaseClient.from('store_faqs').delete().eq('id', id);
+    loadFaqs();
+  }
+
+  loadFaqs();
 </script>
 </body>
 </html>
