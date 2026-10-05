@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>商家后台</title>
+<title>Merchant Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; }
@@ -73,98 +73,151 @@
   .history-msg.bot { background: white; border: 1px solid #ddd; }
 
   #empty-state, #promo-empty-state, #customer-empty-state { color: #888; font-size: 14px; }
+
+  .settings-card { background: white; border-radius: 10px; padding: 20px; max-width: 480px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .settings-field { margin-bottom: 18px; }
+  .settings-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .settings-field .hint { font-size: 12px; color: #888; margin-top: 4px; }
+  .settings-field input[type="text"], .settings-field input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 24px; transition: 0.2s; }
+  .toggle-slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+  .toggle-switch input:checked + .toggle-slider { background: #2563eb; }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+  .plan-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #475569; }
+  #settings-save-btn { margin-top: 4px; }
+  #settings-saved-msg { font-size: 13px; color: #16a34a; margin-top: 10px; display: none; }
 </style>
 </head>
 <body>
 
 <div id="sidebar">
-  <h2 id="store-name-label">我的商家</h2>
-  <div class="nav-item" data-section="chat">聊天</div>
-  <div class="nav-item" data-section="faq">FAQ 管理</div>
-  <div class="nav-item" data-section="promotions">促销管理</div>
-  <div class="nav-item active" data-section="customers">顾客列表</div>
-  <div class="nav-item" data-section="settings">设置</div>
-  <div id="logout-btn">登出</div>
+  <h2 id="store-name-label">My Store</h2>
+  <div class="nav-item" data-section="chat">Chat</div>
+  <div class="nav-item" data-section="faq">FAQ Management</div>
+  <div class="nav-item" data-section="promotions">Promotions</div>
+  <div class="nav-item" data-section="customers">Customers</div>
+  <div class="nav-item active" data-section="settings">Settings</div>
+  <div id="logout-btn">Log out</div>
 </div>
 
 <div style="flex:1; display:flex; flex-direction:column;">
   <div id="mobile-header">
     <span id="hamburger">☰</span>
-    <span id="mobile-title">顾客列表</span>
+    <span id="mobile-title">Settings</span>
   </div>
   <div id="main">
 
     <div class="section" data-section="chat">
-      <p>这个区块之后再做。</p>
+      <p>This section is coming up next.</p>
     </div>
 
     <div class="section" data-section="faq">
       <div class="page-header">
-        <h2>FAQ 管理</h2>
-        <button class="btn" id="add-faq-btn">+ 新增 FAQ</button>
+        <h2>FAQ Management</h2>
+        <button class="btn" id="add-faq-btn">+ Add FAQ</button>
       </div>
       <div id="faq-list"></div>
-      <div id="empty-state" style="display:none;">还没有任何 FAQ，点右上角新增一条吧。</div>
+      <div id="empty-state" style="display:none;">No FAQs yet — click "Add FAQ" to create one.</div>
     </div>
 
     <div class="section" data-section="promotions">
       <div class="page-header">
-        <h2>促销管理</h2>
-        <button class="btn" id="add-promo-btn">+ 新增促销</button>
+        <h2>Promotions</h2>
+        <button class="btn" id="add-promo-btn">+ Add Promotion</button>
       </div>
       <div id="promo-list"></div>
-      <div id="promo-empty-state" style="display:none;">还没有任何促销，点右上角新增一条吧。</div>
+      <div id="promo-empty-state" style="display:none;">No promotions yet — click "Add Promotion" to create one.</div>
     </div>
 
-    <div class="section active" data-section="customers">
+    <div class="section" data-section="customers">
       <div class="page-header">
-        <h2>顾客列表</h2>
+        <h2>Customers</h2>
       </div>
       <div id="customer-list"></div>
-      <div id="customer-empty-state" style="display:none;">还没有顾客留下资料。</div>
+      <div id="customer-empty-state" style="display:none;">No customers have left their details yet.</div>
     </div>
 
-    <div class="section" data-section="settings">
-      <p>这个区块之后再做。</p>
+    <div class="section active" data-section="settings">
+      <div class="page-header">
+        <h2>Settings</h2>
+      </div>
+      <div class="settings-card">
+
+        <div class="settings-field">
+          <label for="settings-ai-name">AI Assistant Name</label>
+          <input type="text" id="settings-ai-name" placeholder="AI Customer Service">
+          <div class="hint">This is the name customers see in the chat widget.</div>
+        </div>
+
+        <div class="settings-field">
+          <label>AI Auto-Reply</label>
+          <div class="toggle-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="settings-ai-enabled">
+              <span class="toggle-slider"></span>
+            </label>
+            <span id="settings-ai-enabled-label">Enabled</span>
+          </div>
+          <div class="hint">When turned off, every conversation goes straight to a human.</div>
+        </div>
+
+        <div class="settings-field">
+          <label for="settings-wait-time">Human Handoff Wait Time (seconds)</label>
+          <input type="number" id="settings-wait-time" min="10" step="10">
+          <div class="hint">If no one replies within this time, the AI will send a fallback reply.</div>
+        </div>
+
+        <div class="settings-field">
+          <label>Monthly Auto-Reply Limit</label>
+          <div class="plan-box" id="settings-plan-box">Loading...</div>
+          <div class="hint">This is set by your plan. Contact us to upgrade.</div>
+        </div>
+
+        <button class="btn" id="settings-save-btn">Save Settings</button>
+        <div id="settings-saved-msg">Saved.</div>
+      </div>
     </div>
 
   </div>
 </div>
 
-<!-- FAQ 弹窗 -->
+<!-- FAQ modal -->
 <div id="faq-modal-overlay">
   <div id="faq-modal">
-    <h3 id="faq-modal-title">新增 FAQ</h3>
-    <input type="text" id="faq-question-input" placeholder="顾客可能会怎么问？">
-    <textarea id="faq-answer-input" placeholder="标准答案"></textarea>
+    <h3 id="faq-modal-title">Add FAQ</h3>
+    <input type="text" id="faq-question-input" placeholder="What might a customer ask?">
+    <textarea id="faq-answer-input" placeholder="Standard answer"></textarea>
     <div id="faq-modal-actions">
-      <button class="btn secondary" id="faq-cancel-btn">取消</button>
-      <button class="btn" id="faq-save-btn">保存</button>
+      <button class="btn secondary" id="faq-cancel-btn">Cancel</button>
+      <button class="btn" id="faq-save-btn">Save</button>
     </div>
   </div>
 </div>
 
-<!-- 促销弹窗 -->
+<!-- Promotion modal -->
 <div id="promo-modal-overlay">
   <div id="promo-modal">
-    <h3 id="promo-modal-title">新增促销</h3>
+    <h3 id="promo-modal-title">Add Promotion</h3>
 
-    <span class="field-label">促销标题（顾客会看到的按钮文字）</span>
-    <input type="text" id="promo-title-input" placeholder="例如：洗车套票 5送1">
+    <span class="field-label">Title (shown as the button text to customers)</span>
+    <input type="text" id="promo-title-input" placeholder="e.g. Car wash package 5+1 free">
 
-    <span class="field-label">一句话简介（选填）</span>
-    <input type="text" id="promo-shortdesc-input" placeholder="例如：买5次送1次">
+    <span class="field-label">Short description (optional)</span>
+    <input type="text" id="promo-shortdesc-input" placeholder="e.g. Buy 5 washes, get 1 free">
 
-    <span class="field-label">完整内容（顾客点开后看到的说明）</span>
-    <textarea id="promo-detail-input" placeholder="具体价格、使用条件..."></textarea>
+    <span class="field-label">Full details (shown after the customer taps the button)</span>
+    <textarea id="promo-detail-input" placeholder="Price, terms and conditions..."></textarea>
 
-    <span class="field-label">图片网址（选填）</span>
+    <span class="field-label">Image URL (optional)</span>
     <input type="text" id="promo-image-input" placeholder="https://...">
 
-    <span class="field-label">触发关键词（用逗号分开，例如：优惠,促销,discount）</span>
-    <input type="text" id="promo-keywords-input" placeholder="优惠,促销,discount">
+    <span class="field-label">Trigger keywords (comma separated, e.g. promotion,discount,deal)</span>
+    <input type="text" id="promo-keywords-input" placeholder="promotion,discount,deal">
 
-    <span class="field-label">有效期（选填，不填代表一直有效）</span>
+    <span class="field-label">Valid dates (optional — leave blank for always active)</span>
     <div class="date-row">
       <div>
         <input type="date" id="promo-validfrom-input">
@@ -175,19 +228,19 @@
     </div>
 
     <div id="promo-modal-actions">
-      <button class="btn secondary" id="promo-cancel-btn">取消</button>
-      <button class="btn" id="promo-save-btn">保存</button>
+      <button class="btn secondary" id="promo-cancel-btn">Cancel</button>
+      <button class="btn" id="promo-save-btn">Save</button>
     </div>
   </div>
 </div>
 
-<!-- 聊天记录弹窗 -->
+<!-- Chat history modal -->
 <div id="history-modal-overlay">
   <div id="history-modal">
-    <h3 id="history-modal-title">聊天记录</h3>
+    <h3 id="history-modal-title">Chat History</h3>
     <div id="history-messages"></div>
     <div id="history-modal-actions">
-      <button class="btn secondary" id="history-close-btn">关闭</button>
+      <button class="btn secondary" id="history-close-btn">Close</button>
     </div>
   </div>
 </div>
@@ -239,7 +292,7 @@
     return div.innerHTML;
   }
 
-  // ---------- FAQ 管理 ----------
+  // ---------- FAQ Management ----------
 
   let editingFaqId = null;
 
@@ -267,8 +320,8 @@
         <div class="faq-q">${escapeHtml(faq.question)}</div>
         <div class="faq-a">${escapeHtml(faq.answer)}</div>
         <div class="faq-actions">
-          <button class="btn secondary edit-btn">编辑</button>
-          <button class="btn danger delete-btn">删除</button>
+          <button class="btn secondary edit-btn">Edit</button>
+          <button class="btn danger delete-btn">Delete</button>
         </div>
       `;
       card.querySelector('.edit-btn').addEventListener('click', () => openFaqModal(faq));
@@ -279,7 +332,7 @@
 
   function openFaqModal(faq) {
     editingFaqId = faq ? faq.id : null;
-    document.getElementById('faq-modal-title').textContent = faq ? '编辑 FAQ' : '新增 FAQ';
+    document.getElementById('faq-modal-title').textContent = faq ? 'Edit FAQ' : 'Add FAQ';
     document.getElementById('faq-question-input').value = faq ? faq.question : '';
     document.getElementById('faq-answer-input').value = faq ? faq.answer : '';
     document.getElementById('faq-modal-overlay').classList.add('open');
@@ -296,7 +349,7 @@
     const question = document.getElementById('faq-question-input').value.trim();
     const answer = document.getElementById('faq-answer-input').value.trim();
     if (!question || !answer) {
-      alert('问题和答案都要填喔');
+      alert('Please fill in both the question and the answer.');
       return;
     }
 
@@ -315,14 +368,14 @@
   });
 
   async function deleteFaq(id) {
-    if (!confirm('确定要删除这条 FAQ 吗？')) return;
+    if (!confirm('Delete this FAQ?')) return;
     await supabaseClient.from('store_faqs').delete().eq('id', id);
     loadFaqs();
   }
 
   loadFaqs();
 
-  // ---------- 促销管理 ----------
+  // ---------- Promotions ----------
 
   let editingPromoId = null;
 
@@ -351,15 +404,15 @@
       const card = document.createElement('div');
       card.className = 'promo-card';
       card.innerHTML = `
-        <span class="promo-status ${promo.is_active ? 'active' : 'inactive'}">${promo.is_active ? '启用中' : '已暂停'}</span>
+        <span class="promo-status ${promo.is_active ? 'active' : 'inactive'}">${promo.is_active ? 'Active' : 'Paused'}</span>
         <div class="promo-title">${escapeHtml(promo.title)}</div>
         ${promo.short_desc ? `<div style="font-size:12px;color:#777;margin-bottom:6px;">${escapeHtml(promo.short_desc)}</div>` : ''}
         <div class="promo-detail">${escapeHtml(promo.full_detail)}</div>
         <div class="promo-tags">${tagsHtml}</div>
         <div class="promo-actions">
-          <button class="btn secondary edit-btn">编辑</button>
-          <button class="btn warn toggle-btn">${promo.is_active ? '暂停' : '启用'}</button>
-          <button class="btn danger delete-btn">删除</button>
+          <button class="btn secondary edit-btn">Edit</button>
+          <button class="btn warn toggle-btn">${promo.is_active ? 'Pause' : 'Activate'}</button>
+          <button class="btn danger delete-btn">Delete</button>
         </div>
       `;
       card.querySelector('.edit-btn').addEventListener('click', () => openPromoModal(promo));
@@ -371,7 +424,7 @@
 
   function openPromoModal(promo) {
     editingPromoId = promo ? promo.id : null;
-    document.getElementById('promo-modal-title').textContent = promo ? '编辑促销' : '新增促销';
+    document.getElementById('promo-modal-title').textContent = promo ? 'Edit Promotion' : 'Add Promotion';
     document.getElementById('promo-title-input').value = promo ? promo.title : '';
     document.getElementById('promo-shortdesc-input').value = promo ? (promo.short_desc || '') : '';
     document.getElementById('promo-detail-input').value = promo ? promo.full_detail : '';
@@ -399,7 +452,7 @@
     const validTo = document.getElementById('promo-validto-input').value;
 
     if (!title || !fullDetail || !keywordsRaw) {
-      alert('促销标题、完整内容、触发关键词都要填喔');
+      alert('Title, full details, and trigger keywords are all required.');
       return;
     }
 
@@ -429,7 +482,7 @@
   });
 
   async function deletePromo(id) {
-    if (!confirm('确定要删除这个促销吗？')) return;
+    if (!confirm('Delete this promotion?')) return;
     await supabaseClient.from('promotions').delete().eq('id', id);
     loadPromos();
   }
@@ -441,7 +494,7 @@
 
   loadPromos();
 
-  // ---------- 顾客列表 ----------
+  // ---------- Customers ----------
 
   async function loadCustomers() {
     const { data } = await supabaseClient
@@ -465,11 +518,11 @@
       const card = document.createElement('div');
       card.className = 'customer-card';
       card.innerHTML = `
-        <div class="customer-name">${escapeHtml(customer.name || '（未填写姓名）')}</div>
+        <div class="customer-name">${escapeHtml(customer.name || '(No name provided)')}</div>
         <div class="customer-phone">${escapeHtml(customer.phone)}</div>
-        <div class="customer-date">加入日期：${joinedDate}</div>
+        <div class="customer-date">Joined: ${joinedDate}</div>
         <div class="customer-actions">
-          <button class="btn secondary view-history-btn">查看聊天记录</button>
+          <button class="btn secondary view-history-btn">View Chat History</button>
         </div>
       `;
       card.querySelector('.view-history-btn').addEventListener('click', () => openHistoryModal(customer));
@@ -479,9 +532,9 @@
 
   async function openHistoryModal(customer) {
     document.getElementById('history-modal-title').textContent =
-      (customer.name || '（未填写姓名）') + ' — ' + customer.phone;
+      (customer.name || '(No name provided)') + ' — ' + customer.phone;
     const messagesEl = document.getElementById('history-messages');
-    messagesEl.innerHTML = '<div style="font-size:13px;color:#888;">加载中...</div>';
+    messagesEl.innerHTML = '<div style="font-size:13px;color:#888;">Loading...</div>';
     document.getElementById('history-modal-overlay').classList.add('open');
 
     const res = await fetch(API_URL + '/chat/history?store_id=' + storeId + '&customer_id=' + customer.id);
@@ -489,7 +542,7 @@
 
     messagesEl.innerHTML = '';
     if (!data || data.length === 0) {
-      messagesEl.innerHTML = '<div style="font-size:13px;color:#888;">还没有聊天记录。</div>';
+      messagesEl.innerHTML = '<div style="font-size:13px;color:#888;">No messages yet.</div>';
       return;
     }
 
@@ -514,6 +567,46 @@
   });
 
   loadCustomers();
+
+  // ---------- Settings ----------
+
+  async function loadSettings() {
+    const { data } = await supabaseClient
+      .from('stores')
+      .select('ai_display_name, ai_mode_enabled, human_handoff_wait_seconds, monthly_reply_limit')
+      .eq('id', storeId)
+      .single();
+
+    if (!data) return;
+
+    document.getElementById('settings-ai-name').value = data.ai_display_name || 'AI Customer Service';
+    document.getElementById('settings-ai-enabled').checked = data.ai_mode_enabled !== false;
+    document.getElementById('settings-ai-enabled-label').textContent = data.ai_mode_enabled !== false ? 'Enabled' : 'Disabled';
+    document.getElementById('settings-wait-time').value = data.human_handoff_wait_seconds || 60;
+    document.getElementById('settings-plan-box').textContent = (data.monthly_reply_limit || 0) + ' auto-replies / month';
+  }
+
+  document.getElementById('settings-ai-enabled').addEventListener('change', (e) => {
+    document.getElementById('settings-ai-enabled-label').textContent = e.target.checked ? 'Enabled' : 'Disabled';
+  });
+
+  document.getElementById('settings-save-btn').addEventListener('click', async () => {
+    const aiName = document.getElementById('settings-ai-name').value.trim() || 'AI Customer Service';
+    const aiEnabled = document.getElementById('settings-ai-enabled').checked;
+    const waitTime = parseInt(document.getElementById('settings-wait-time').value, 10) || 60;
+
+    await supabaseClient.from('stores').update({
+      ai_display_name: aiName,
+      ai_mode_enabled: aiEnabled,
+      human_handoff_wait_seconds: waitTime,
+    }).eq('id', storeId);
+
+    const savedMsg = document.getElementById('settings-saved-msg');
+    savedMsg.style.display = 'block';
+    setTimeout(() => { savedMsg.style.display = 'none'; }, 2000);
+  });
+
+  loadSettings();
 </script>
 </body>
 </html>
