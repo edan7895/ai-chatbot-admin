@@ -37,22 +37,33 @@
   .btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
   .btn.secondary { background: #e5e7eb; color: #111; }
   .btn.danger { background: #fee2e2; color: #b91c1c; }
+  .btn.warn { background: #fef3c7; color: #92400e; }
 
-  .faq-card { background: white; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .faq-q { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-  .faq-a { font-size: 13px; color: #444; margin-bottom: 8px; white-space: pre-wrap; }
-  .faq-actions { display: flex; gap: 8px; }
-  .faq-actions button { font-size: 12px; padding: 5px 10px; }
+  .faq-card, .promo-card { background: white; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .faq-q, .promo-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .faq-a, .promo-detail { font-size: 13px; color: #444; margin-bottom: 8px; white-space: pre-wrap; }
+  .faq-actions, .promo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .faq-actions button, .promo-actions button { font-size: 12px; padding: 5px 10px; }
 
-  #faq-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
-  #faq-modal-overlay.open { display: flex; }
-  #faq-modal { background: white; border-radius: 12px; padding: 20px; width: 400px; max-width: 90vw; }
-  #faq-modal h3 { margin-top: 0; font-size: 16px; }
-  #faq-modal textarea, #faq-modal input { width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
-  #faq-modal textarea { min-height: 70px; resize: vertical; }
-  #faq-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .promo-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .promo-tag { background: #eff6ff; color: #2563eb; font-size: 11px; padding: 3px 8px; border-radius: 10px; }
+  .promo-status { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-bottom: 8px; }
+  .promo-status.active { background: #dcfce7; color: #166534; }
+  .promo-status.inactive { background: #f1f5f9; color: #64748b; }
 
-  #empty-state { color: #888; font-size: 14px; }
+  #faq-modal-overlay, #promo-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
+  #faq-modal-overlay.open, #promo-modal-overlay.open { display: flex; }
+  #faq-modal, #promo-modal { background: white; border-radius: 12px; padding: 20px; width: 420px; max-width: 90vw; }
+  #faq-modal h3, #promo-modal h3 { margin-top: 0; font-size: 16px; }
+  #faq-modal textarea, #faq-modal input,
+  #promo-modal textarea, #promo-modal input { width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
+  #faq-modal textarea, #promo-modal textarea { min-height: 70px; resize: vertical; }
+  .field-label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+  .date-row { display: flex; gap: 8px; }
+  .date-row > div { flex: 1; }
+  #faq-modal-actions, #promo-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  #empty-state, #promo-empty-state { color: #888; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -88,7 +99,12 @@
     </div>
 
     <div class="section" data-section="promotions">
-      <p>这个区块之后再做。</p>
+      <div class="page-header">
+        <h2>促销管理</h2>
+        <button class="btn" id="add-promo-btn">+ 新增促销</button>
+      </div>
+      <div id="promo-list"></div>
+      <div id="promo-empty-state" style="display:none;">还没有任何促销，点右上角新增一条吧。</div>
     </div>
 
     <div class="section" data-section="customers">
@@ -102,6 +118,7 @@
   </div>
 </div>
 
+<!-- FAQ 弹窗 -->
 <div id="faq-modal-overlay">
   <div id="faq-modal">
     <h3 id="faq-modal-title">新增 FAQ</h3>
@@ -110,6 +127,43 @@
     <div id="faq-modal-actions">
       <button class="btn secondary" id="faq-cancel-btn">取消</button>
       <button class="btn" id="faq-save-btn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 促销弹窗 -->
+<div id="promo-modal-overlay">
+  <div id="promo-modal">
+    <h3 id="promo-modal-title">新增促销</h3>
+
+    <span class="field-label">促销标题（顾客会看到的按钮文字）</span>
+    <input type="text" id="promo-title-input" placeholder="例如：洗车套票 5送1">
+
+    <span class="field-label">一句话简介（选填）</span>
+    <input type="text" id="promo-shortdesc-input" placeholder="例如：买5次送1次">
+
+    <span class="field-label">完整内容（顾客点开后看到的说明）</span>
+    <textarea id="promo-detail-input" placeholder="具体价格、使用条件..."></textarea>
+
+    <span class="field-label">图片网址（选填）</span>
+    <input type="text" id="promo-image-input" placeholder="https://...">
+
+    <span class="field-label">触发关键词（用逗号分开，例如：优惠,促销,discount）</span>
+    <input type="text" id="promo-keywords-input" placeholder="优惠,促销,discount">
+
+    <span class="field-label">有效期（选填，不填代表一直有效）</span>
+    <div class="date-row">
+      <div>
+        <input type="date" id="promo-validfrom-input">
+      </div>
+      <div>
+        <input type="date" id="promo-validto-input">
+      </div>
+    </div>
+
+    <div id="promo-modal-actions">
+      <button class="btn secondary" id="promo-cancel-btn">取消</button>
+      <button class="btn" id="promo-save-btn">保存</button>
     </div>
   </div>
 </div>
@@ -155,6 +209,12 @@
     });
   });
 
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
   // ---------- FAQ 管理 ----------
 
   let editingFaqId = null;
@@ -193,12 +253,6 @@
     });
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
   function openFaqModal(faq) {
     editingFaqId = faq ? faq.id : null;
     document.getElementById('faq-modal-title').textContent = faq ? '编辑 FAQ' : '新增 FAQ';
@@ -223,10 +277,8 @@
     }
 
     if (editingFaqId) {
-      // 编辑：只改文字，不重新算向量（问法没变，语义不用重算）
       await supabaseClient.from('store_faqs').update({ question, answer }).eq('id', editingFaqId);
     } else {
-      // 新增：交给后端 API，因为要算向量（Embedding），前端算不了
       await fetch(API_URL + '/faq', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -245,6 +297,125 @@
   }
 
   loadFaqs();
+
+  // ---------- 促销管理 ----------
+
+  let editingPromoId = null;
+
+  async function loadPromos() {
+    const { data } = await supabaseClient
+      .from('promotions')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('sort_order', { ascending: true });
+
+    const listEl = document.getElementById('promo-list');
+    const emptyEl = document.getElementById('promo-empty-state');
+    listEl.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    data.forEach((promo) => {
+      const tagsHtml = (promo.trigger_keywords || [])
+        .map((k) => `<span class="promo-tag">${escapeHtml(k)}</span>`)
+        .join('');
+
+      const card = document.createElement('div');
+      card.className = 'promo-card';
+      card.innerHTML = `
+        <span class="promo-status ${promo.is_active ? 'active' : 'inactive'}">${promo.is_active ? '启用中' : '已暂停'}</span>
+        <div class="promo-title">${escapeHtml(promo.title)}</div>
+        ${promo.short_desc ? `<div style="font-size:12px;color:#777;margin-bottom:6px;">${escapeHtml(promo.short_desc)}</div>` : ''}
+        <div class="promo-detail">${escapeHtml(promo.full_detail)}</div>
+        <div class="promo-tags">${tagsHtml}</div>
+        <div class="promo-actions">
+          <button class="btn secondary edit-btn">编辑</button>
+          <button class="btn warn toggle-btn">${promo.is_active ? '暂停' : '启用'}</button>
+          <button class="btn danger delete-btn">删除</button>
+        </div>
+      `;
+      card.querySelector('.edit-btn').addEventListener('click', () => openPromoModal(promo));
+      card.querySelector('.delete-btn').addEventListener('click', () => deletePromo(promo.id));
+      card.querySelector('.toggle-btn').addEventListener('click', () => togglePromo(promo.id, !promo.is_active));
+      listEl.appendChild(card);
+    });
+  }
+
+  function openPromoModal(promo) {
+    editingPromoId = promo ? promo.id : null;
+    document.getElementById('promo-modal-title').textContent = promo ? '编辑促销' : '新增促销';
+    document.getElementById('promo-title-input').value = promo ? promo.title : '';
+    document.getElementById('promo-shortdesc-input').value = promo ? (promo.short_desc || '') : '';
+    document.getElementById('promo-detail-input').value = promo ? promo.full_detail : '';
+    document.getElementById('promo-image-input').value = promo ? (promo.image_url || '') : '';
+    document.getElementById('promo-keywords-input').value = promo ? (promo.trigger_keywords || []).join(',') : '';
+    document.getElementById('promo-validfrom-input').value = promo && promo.valid_from ? promo.valid_from.slice(0, 10) : '';
+    document.getElementById('promo-validto-input').value = promo && promo.valid_to ? promo.valid_to.slice(0, 10) : '';
+    document.getElementById('promo-modal-overlay').classList.add('open');
+  }
+
+  function closePromoModal() {
+    document.getElementById('promo-modal-overlay').classList.remove('open');
+  }
+
+  document.getElementById('add-promo-btn').addEventListener('click', () => openPromoModal(null));
+  document.getElementById('promo-cancel-btn').addEventListener('click', closePromoModal);
+
+  document.getElementById('promo-save-btn').addEventListener('click', async () => {
+    const title = document.getElementById('promo-title-input').value.trim();
+    const shortDesc = document.getElementById('promo-shortdesc-input').value.trim();
+    const fullDetail = document.getElementById('promo-detail-input').value.trim();
+    const imageUrl = document.getElementById('promo-image-input').value.trim();
+    const keywordsRaw = document.getElementById('promo-keywords-input').value.trim();
+    const validFrom = document.getElementById('promo-validfrom-input').value;
+    const validTo = document.getElementById('promo-validto-input').value;
+
+    if (!title || !fullDetail || !keywordsRaw) {
+      alert('促销标题、完整内容、触发关键词都要填喔');
+      return;
+    }
+
+    const keywords = keywordsRaw.split(',').map((k) => k.trim()).filter((k) => k);
+
+    const payload = {
+      store_id: storeId,
+      title,
+      short_desc: shortDesc || null,
+      full_detail: fullDetail,
+      image_url: imageUrl || null,
+      trigger_keywords: keywords,
+      valid_from: validFrom ? new Date(validFrom).toISOString() : null,
+      valid_to: validTo ? new Date(validTo).toISOString() : null,
+    };
+
+    if (editingPromoId) {
+      await supabaseClient.from('promotions').update(payload).eq('id', editingPromoId);
+    } else {
+      payload.is_active = true;
+      payload.sort_order = 0;
+      await supabaseClient.from('promotions').insert(payload);
+    }
+
+    closePromoModal();
+    loadPromos();
+  });
+
+  async function deletePromo(id) {
+    if (!confirm('确定要删除这个促销吗？')) return;
+    await supabaseClient.from('promotions').delete().eq('id', id);
+    loadPromos();
+  }
+
+  async function togglePromo(id, newStatus) {
+    await supabaseClient.from('promotions').update({ is_active: newStatus }).eq('id', id);
+    loadPromos();
+  }
+
+  loadPromos();
 </script>
 </body>
 </html>
