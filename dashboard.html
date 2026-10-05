@@ -132,7 +132,7 @@
 <div id="sidebar">
   <h2 id="store-name-label">My Store</h2>
   <div class="nav-item active" data-section="chat">Chat</div>
-  <div class="nav-item" data-section="faq">FAQ Management</div>
+  <div class="nav-item" data-section="faq">AI Training Centre</div>
   <div class="nav-item" data-section="promotions">Promotions</div>
   <div class="nav-item" data-section="customers">Customers</div>
   <div class="nav-item" data-section="settings">Settings</div>
@@ -157,7 +157,7 @@
 
     <div class="section" data-section="faq">
       <div class="page-header">
-        <h2>FAQ Management</h2>
+        <h2>AI Training Centre</h2>
         <button class="btn" id="add-faq-btn">+ Add FAQ</button>
       </div>
       <div id="faq-list"></div>
@@ -341,7 +341,7 @@
     return Math.floor(diff / 86400) + 'd ago';
   }
 
-  // ---------- FAQ Management (defined early so Chat section can call openFaqModal) ----------
+  // ---------- AI Training Centre (defined early so Chat section can call openFaqModal) ----------
 
   let editingFaqId = null;
 
@@ -414,7 +414,7 @@
 
     closeFaqModal();
     loadFaqs();
-    alert('Saved to FAQ.');
+    alert('Saved to AI Training Centre.');
   });
 
   async function deleteFaq(id) {
@@ -517,8 +517,10 @@
     if (!messagesEl) return;
     messagesEl.innerHTML = '';
 
+    let lastCustomerMessage = null;
     data.forEach((row) => {
       if (row.user_message) {
+        lastCustomerMessage = row.user_message;
         const div = document.createElement('div');
         div.className = 'chat-msg customer';
         div.textContent = row.user_message;
@@ -534,11 +536,13 @@
         bubble.innerHTML = `<div class="chat-msg-label">${repliedBy === 'human' ? 'You' : 'AI'}</div>` + escapeHtml(row.ai_response);
         rowWrap.appendChild(bubble);
 
-        if (row.user_message) {
+        if (lastCustomerMessage) {
+          const questionForFaq = lastCustomerMessage;
+          const answerForFaq = row.ai_response;
           const saveLink = document.createElement('div');
           saveLink.className = 'save-faq-link';
-          saveLink.textContent = 'Save as FAQ';
-          saveLink.addEventListener('click', () => saveAsFaq(row.user_message, row.ai_response));
+          saveLink.textContent = 'AI Training';
+          saveLink.addEventListener('click', () => saveAsFaq(questionForFaq, answerForFaq));
           rowWrap.appendChild(saveLink);
         }
 
