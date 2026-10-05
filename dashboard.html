@@ -105,12 +105,14 @@
   #chat-window-header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px; }
   #chat-back-btn { display: none; cursor: pointer; font-size: 18px; }
   #chat-window-messages { flex: 1; overflow-y: auto; padding: 14px; background: #f5f5f5; }
-  .chat-msg { margin-bottom: 10px; max-width: 70%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
+  .chat-msg-row { margin-bottom: 10px; }
+  .chat-msg { max-width: 70%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
   .chat-msg.customer { background: white; border: 1px solid #ddd; }
   .chat-msg.reply { margin-left: auto; color: white; }
   .chat-msg.reply.ai { background: #2563eb; }
   .chat-msg.reply.human { background: #16a34a; }
   .chat-msg-label { font-size: 10px; opacity: 0.8; margin-bottom: 2px; }
+  .save-faq-link { font-size: 11px; color: #2563eb; cursor: pointer; margin-top: 3px; text-align: right; text-decoration: underline; }
   #chat-window-input-row { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e5e7eb; }
   #chat-reply-input { flex: 1; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
   #chat-empty-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px; }
@@ -339,12 +341,95 @@
     return Math.floor(diff / 86400) + 'd ago';
   }
 
+  // ---------- FAQ Management (defined early so Chat section can call openFaqModal) ----------
+
+  let editingFaqId = null;
+
+  async function loadFaqs() {
+    const { data } = await supabaseClient
+      .from('store_faqs')
+      .select('id, question, answer')
+      .eq('store_id', storeId)
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('faq-list');
+    const emptyEl = document.getElementById('empty-state');
+    listEl.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    data.forEach((faq) => {
+      const card = document.createElement('div');
+      card.className = 'faq-card';
+      card.innerHTML = `
+        <div class="faq-q">${escapeHtml(faq.question)}</div>
+        <div class="faq-a">${escapeHtml(faq.answer)}</div>
+        <div class="faq-actions">
+          <button class="btn secondary edit-btn">Edit</button>
+          <button class="btn danger delete-btn">Delete</button>
+        </div>
+      `;
+      card.querySelector('.edit-btn').addEventListener('click', () => openFaqModal(faq));
+      card.querySelector('.delete-btn').addEventListener('click', () => deleteFaq(faq.id));
+      listEl.appendChild(card);
+    });
+  }
+
+  function openFaqModal(faq) {
+    editingFaqId = faq && faq.id ? faq.id : null;
+    document.getElementById('faq-modal-title').textContent = editingFaqId ? 'Edit FAQ' : 'Add FAQ';
+    document.getElementById('faq-question-input').value = faq ? faq.question : '';
+    document.getElementById('faq-answer-input').value = faq ? faq.answer : '';
+    document.getElementById('faq-modal-overlay').classList.add('open');
+  }
+
+  function closeFaqModal() {
+    document.getElementById('faq-modal-overlay').classList.remove('open');
+  }
+
+  document.getElementById('add-faq-btn').addEventListener('click', () => openFaqModal(null));
+  document.getElementById('faq-cancel-btn').addEventListener('click', closeFaqModal);
+
+  document.getElementById('faq-save-btn').addEventListener('click', async () => {
+    const question = document.getElementById('faq-question-input').value.trim();
+    const answer = document.getElementById('faq-answer-input').value.trim();
+    if (!question || !answer) {
+      alert('Please fill in both the question and the answer.');
+      return;
+    }
+
+    if (editingFaqId) {
+      await supabaseClient.from('store_faqs').update({ question, answer }).eq('id', editingFaqId);
+    } else {
+      await fetch(API_URL + '/faq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ store_id: storeId, question, answer }),
+      });
+    }
+
+    closeFaqModal();
+    loadFaqs();
+    alert('Saved to FAQ.');
+  });
+
+  async function deleteFaq(id) {
+    if (!confirm('Delete this FAQ?')) return;
+    await supabaseClient.from('store_faqs').delete().eq('id', id);
+    loadFaqs();
+  }
+
+  loadFaqs();
+
   // ---------- Chat ----------
 
   let selectedCustomerId = null;
   let selectedCustomerLabel = '';
   let chatPollInterval = null;
-  let listPollInterval = null;
 
   async function loadConversations() {
     const { data: convos } = await supabaseClient
@@ -441,14 +526,31 @@
       }
       if (row.ai_response) {
         const repliedBy = row.replied_by === 'human' ? 'human' : 'ai';
-        const div = document.createElement('div');
-        div.className = 'chat-msg reply ' + repliedBy;
-        div.innerHTML = `<div class="chat-msg-label">${repliedBy === 'human' ? 'You' : 'AI'}</div>` + escapeHtml(row.ai_response);
-        messagesEl.appendChild(div);
+        const rowWrap = document.createElement('div');
+        rowWrap.className = 'chat-msg-row';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-msg reply ' + repliedBy;
+        bubble.innerHTML = `<div class="chat-msg-label">${repliedBy === 'human' ? 'You' : 'AI'}</div>` + escapeHtml(row.ai_response);
+        rowWrap.appendChild(bubble);
+
+        if (row.user_message) {
+          const saveLink = document.createElement('div');
+          saveLink.className = 'save-faq-link';
+          saveLink.textContent = 'Save as FAQ';
+          saveLink.addEventListener('click', () => saveAsFaq(row.user_message, row.ai_response));
+          rowWrap.appendChild(saveLink);
+        }
+
+        messagesEl.appendChild(rowWrap);
       }
     });
 
     messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function saveAsFaq(question, answer) {
+    openFaqModal({ question, answer });
   }
 
   async function sendHumanReply() {
@@ -468,90 +570,7 @@
   }
 
   loadConversations();
-  listPollInterval = setInterval(loadConversations, 10000);
-
-  // ---------- FAQ Management ----------
-
-  let editingFaqId = null;
-
-  async function loadFaqs() {
-    const { data } = await supabaseClient
-      .from('store_faqs')
-      .select('id, question, answer')
-      .eq('store_id', storeId)
-      .order('created_at', { ascending: false });
-
-    const listEl = document.getElementById('faq-list');
-    const emptyEl = document.getElementById('empty-state');
-    listEl.innerHTML = '';
-
-    if (!data || data.length === 0) {
-      emptyEl.style.display = 'block';
-      return;
-    }
-    emptyEl.style.display = 'none';
-
-    data.forEach((faq) => {
-      const card = document.createElement('div');
-      card.className = 'faq-card';
-      card.innerHTML = `
-        <div class="faq-q">${escapeHtml(faq.question)}</div>
-        <div class="faq-a">${escapeHtml(faq.answer)}</div>
-        <div class="faq-actions">
-          <button class="btn secondary edit-btn">Edit</button>
-          <button class="btn danger delete-btn">Delete</button>
-        </div>
-      `;
-      card.querySelector('.edit-btn').addEventListener('click', () => openFaqModal(faq));
-      card.querySelector('.delete-btn').addEventListener('click', () => deleteFaq(faq.id));
-      listEl.appendChild(card);
-    });
-  }
-
-  function openFaqModal(faq) {
-    editingFaqId = faq ? faq.id : null;
-    document.getElementById('faq-modal-title').textContent = faq ? 'Edit FAQ' : 'Add FAQ';
-    document.getElementById('faq-question-input').value = faq ? faq.question : '';
-    document.getElementById('faq-answer-input').value = faq ? faq.answer : '';
-    document.getElementById('faq-modal-overlay').classList.add('open');
-  }
-
-  function closeFaqModal() {
-    document.getElementById('faq-modal-overlay').classList.remove('open');
-  }
-
-  document.getElementById('add-faq-btn').addEventListener('click', () => openFaqModal(null));
-  document.getElementById('faq-cancel-btn').addEventListener('click', closeFaqModal);
-
-  document.getElementById('faq-save-btn').addEventListener('click', async () => {
-    const question = document.getElementById('faq-question-input').value.trim();
-    const answer = document.getElementById('faq-answer-input').value.trim();
-    if (!question || !answer) {
-      alert('Please fill in both the question and the answer.');
-      return;
-    }
-
-    if (editingFaqId) {
-      await supabaseClient.from('store_faqs').update({ question, answer }).eq('id', editingFaqId);
-    } else {
-      await fetch(API_URL + '/faq', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_id: storeId, question, answer }),
-      });
-    }
-
-    closeFaqModal();
-    loadFaqs();
-  });
-
-  async function deleteFaq(id) {
-    if (!confirm('Delete this FAQ?')) return;
-    await supabaseClient.from('store_faqs').delete().eq('id', id);
-    loadFaqs();
-  }
-
-  loadFaqs();
+  setInterval(loadConversations, 10000);
 
   // ---------- Promotions ----------
 
