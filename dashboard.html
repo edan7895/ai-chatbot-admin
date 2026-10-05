@@ -39,11 +39,11 @@
   .btn.danger { background: #fee2e2; color: #b91c1c; }
   .btn.warn { background: #fef3c7; color: #92400e; }
 
-  .faq-card, .promo-card { background: white; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .faq-q, .promo-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .faq-card, .promo-card, .customer-card { background: white; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .faq-q, .promo-title, .customer-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
   .faq-a, .promo-detail { font-size: 13px; color: #444; margin-bottom: 8px; white-space: pre-wrap; }
-  .faq-actions, .promo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  .faq-actions button, .promo-actions button { font-size: 12px; padding: 5px 10px; }
+  .faq-actions, .promo-actions, .customer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .faq-actions button, .promo-actions button, .customer-actions button { font-size: 12px; padding: 5px 10px; }
 
   .promo-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .promo-tag { background: #eff6ff; color: #2563eb; font-size: 11px; padding: 3px 8px; border-radius: 10px; }
@@ -51,19 +51,28 @@
   .promo-status.active { background: #dcfce7; color: #166534; }
   .promo-status.inactive { background: #f1f5f9; color: #64748b; }
 
-  #faq-modal-overlay, #promo-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
-  #faq-modal-overlay.open, #promo-modal-overlay.open { display: flex; }
-  #faq-modal, #promo-modal { background: white; border-radius: 12px; padding: 20px; width: 420px; max-width: 90vw; }
-  #faq-modal h3, #promo-modal h3 { margin-top: 0; font-size: 16px; }
+  .customer-phone { font-size: 13px; color: #555; margin-bottom: 4px; }
+  .customer-date { font-size: 12px; color: #999; margin-bottom: 8px; }
+
+  #faq-modal-overlay, #promo-modal-overlay, #history-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
+  #faq-modal-overlay.open, #promo-modal-overlay.open, #history-modal-overlay.open { display: flex; }
+  #faq-modal, #promo-modal, #history-modal { background: white; border-radius: 12px; padding: 20px; width: 420px; max-width: 90vw; }
+  #history-modal { max-height: 80vh; display: flex; flex-direction: column; }
+  #faq-modal h3, #promo-modal h3, #history-modal h3 { margin-top: 0; font-size: 16px; }
   #faq-modal textarea, #faq-modal input,
   #promo-modal textarea, #promo-modal input { width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
   #faq-modal textarea, #promo-modal textarea { min-height: 70px; resize: vertical; }
   .field-label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
   .date-row { display: flex; gap: 8px; }
   .date-row > div { flex: 1; }
-  #faq-modal-actions, #promo-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  #faq-modal-actions, #promo-modal-actions, #history-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
-  #empty-state, #promo-empty-state { color: #888; font-size: 14px; }
+  #history-messages { overflow-y: auto; flex: 1; background: #f5f5f5; border-radius: 8px; padding: 10px; }
+  .history-msg { margin-bottom: 10px; max-width: 85%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
+  .history-msg.user { background: #2563eb; color: white; margin-left: auto; }
+  .history-msg.bot { background: white; border: 1px solid #ddd; }
+
+  #empty-state, #promo-empty-state, #customer-empty-state { color: #888; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -71,9 +80,9 @@
 <div id="sidebar">
   <h2 id="store-name-label">我的商家</h2>
   <div class="nav-item" data-section="chat">聊天</div>
-  <div class="nav-item active" data-section="faq">FAQ 管理</div>
+  <div class="nav-item" data-section="faq">FAQ 管理</div>
   <div class="nav-item" data-section="promotions">促销管理</div>
-  <div class="nav-item" data-section="customers">顾客列表</div>
+  <div class="nav-item active" data-section="customers">顾客列表</div>
   <div class="nav-item" data-section="settings">设置</div>
   <div id="logout-btn">登出</div>
 </div>
@@ -81,7 +90,7 @@
 <div style="flex:1; display:flex; flex-direction:column;">
   <div id="mobile-header">
     <span id="hamburger">☰</span>
-    <span id="mobile-title">FAQ 管理</span>
+    <span id="mobile-title">顾客列表</span>
   </div>
   <div id="main">
 
@@ -89,7 +98,7 @@
       <p>这个区块之后再做。</p>
     </div>
 
-    <div class="section active" data-section="faq">
+    <div class="section" data-section="faq">
       <div class="page-header">
         <h2>FAQ 管理</h2>
         <button class="btn" id="add-faq-btn">+ 新增 FAQ</button>
@@ -107,8 +116,12 @@
       <div id="promo-empty-state" style="display:none;">还没有任何促销，点右上角新增一条吧。</div>
     </div>
 
-    <div class="section" data-section="customers">
-      <p>这个区块之后再做。</p>
+    <div class="section active" data-section="customers">
+      <div class="page-header">
+        <h2>顾客列表</h2>
+      </div>
+      <div id="customer-list"></div>
+      <div id="customer-empty-state" style="display:none;">还没有顾客留下资料。</div>
     </div>
 
     <div class="section" data-section="settings">
@@ -164,6 +177,17 @@
     <div id="promo-modal-actions">
       <button class="btn secondary" id="promo-cancel-btn">取消</button>
       <button class="btn" id="promo-save-btn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 聊天记录弹窗 -->
+<div id="history-modal-overlay">
+  <div id="history-modal">
+    <h3 id="history-modal-title">聊天记录</h3>
+    <div id="history-messages"></div>
+    <div id="history-modal-actions">
+      <button class="btn secondary" id="history-close-btn">关闭</button>
     </div>
   </div>
 </div>
@@ -416,6 +440,80 @@
   }
 
   loadPromos();
+
+  // ---------- 顾客列表 ----------
+
+  async function loadCustomers() {
+    const { data } = await supabaseClient
+      .from('customers')
+      .select('id, name, phone, created_at')
+      .eq('store_id', storeId)
+      .order('created_at', { ascending: false });
+
+    const listEl = document.getElementById('customer-list');
+    const emptyEl = document.getElementById('customer-empty-state');
+    listEl.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    data.forEach((customer) => {
+      const joinedDate = new Date(customer.created_at).toLocaleDateString();
+      const card = document.createElement('div');
+      card.className = 'customer-card';
+      card.innerHTML = `
+        <div class="customer-name">${escapeHtml(customer.name || '（未填写姓名）')}</div>
+        <div class="customer-phone">${escapeHtml(customer.phone)}</div>
+        <div class="customer-date">加入日期：${joinedDate}</div>
+        <div class="customer-actions">
+          <button class="btn secondary view-history-btn">查看聊天记录</button>
+        </div>
+      `;
+      card.querySelector('.view-history-btn').addEventListener('click', () => openHistoryModal(customer));
+      listEl.appendChild(card);
+    });
+  }
+
+  async function openHistoryModal(customer) {
+    document.getElementById('history-modal-title').textContent =
+      (customer.name || '（未填写姓名）') + ' — ' + customer.phone;
+    const messagesEl = document.getElementById('history-messages');
+    messagesEl.innerHTML = '<div style="font-size:13px;color:#888;">加载中...</div>';
+    document.getElementById('history-modal-overlay').classList.add('open');
+
+    const res = await fetch(API_URL + '/chat/history?store_id=' + storeId + '&customer_id=' + customer.id);
+    const data = await res.json();
+
+    messagesEl.innerHTML = '';
+    if (!data || data.length === 0) {
+      messagesEl.innerHTML = '<div style="font-size:13px;color:#888;">还没有聊天记录。</div>';
+      return;
+    }
+
+    data.forEach((row) => {
+      if (row.user_message) {
+        const div = document.createElement('div');
+        div.className = 'history-msg user';
+        div.textContent = row.user_message;
+        messagesEl.appendChild(div);
+      }
+      if (row.ai_response) {
+        const div = document.createElement('div');
+        div.className = 'history-msg bot';
+        div.textContent = row.ai_response;
+        messagesEl.appendChild(div);
+      }
+    });
+  }
+
+  document.getElementById('history-close-btn').addEventListener('click', () => {
+    document.getElementById('history-modal-overlay').classList.remove('open');
+  });
+
+  loadCustomers();
 </script>
 </body>
 </html>
