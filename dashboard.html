@@ -32,7 +32,7 @@
   .section { display: none; flex: 1; min-height: 0; }
   .section.active { display: flex; flex-direction: column; }
 
-  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
   .page-header h2 { margin: 0; font-size: 18px; }
   .btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
   .btn.secondary { background: #e5e7eb; color: #111; }
@@ -54,25 +54,26 @@
   .customer-phone { font-size: 13px; color: #555; margin-bottom: 4px; }
   .customer-date { font-size: 12px; color: #999; margin-bottom: 8px; }
 
-  #faq-modal-overlay, #promo-modal-overlay, #history-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
-  #faq-modal-overlay.open, #promo-modal-overlay.open, #history-modal-overlay.open { display: flex; }
-  #faq-modal, #promo-modal, #history-modal { background: white; border-radius: 12px; padding: 20px; width: 420px; max-width: 90vw; }
+  #faq-modal-overlay, #promo-modal-overlay, #history-modal-overlay, #price-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
+  #faq-modal-overlay.open, #promo-modal-overlay.open, #history-modal-overlay.open, #price-modal-overlay.open { display: flex; }
+  #faq-modal, #promo-modal, #history-modal, #price-modal { background: white; border-radius: 12px; padding: 20px; width: 420px; max-width: 90vw; }
   #history-modal { max-height: 80vh; display: flex; flex-direction: column; }
-  #faq-modal h3, #promo-modal h3, #history-modal h3 { margin-top: 0; font-size: 16px; }
+  #faq-modal h3, #promo-modal h3, #history-modal h3, #price-modal h3 { margin-top: 0; font-size: 16px; }
   #faq-modal textarea, #faq-modal input,
-  #promo-modal textarea, #promo-modal input { width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
-  #faq-modal textarea, #promo-modal textarea { min-height: 70px; resize: vertical; }
+  #promo-modal textarea, #promo-modal input,
+  #price-modal textarea, #price-modal input { width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
+  #faq-modal textarea, #promo-modal textarea, #price-modal textarea { min-height: 70px; resize: vertical; }
   .field-label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
   .date-row { display: flex; gap: 8px; }
   .date-row > div { flex: 1; }
-  #faq-modal-actions, #promo-modal-actions, #history-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  #faq-modal-actions, #promo-modal-actions, #history-modal-actions, #price-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
   #history-messages { overflow-y: auto; flex: 1; background: #f5f5f5; border-radius: 8px; padding: 10px; }
   .history-msg { margin-bottom: 10px; max-width: 85%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
   .history-msg.user { background: #2563eb; color: white; margin-left: auto; }
   .history-msg.bot { background: white; border: 1px solid #ddd; }
 
-  #empty-state, #promo-empty-state, #customer-empty-state { color: #888; font-size: 14px; }
+  #empty-state, #promo-empty-state, #customer-empty-state, #price-empty-state { color: #888; font-size: 14px; }
 
   .settings-card { background: white; border-radius: 10px; padding: 20px; max-width: 480px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .settings-field { margin-bottom: 18px; }
@@ -92,6 +93,21 @@
   .usage-bar-fill.warn { background: #f59e0b; }
   .usage-bar-fill.full { background: #dc2626; }
   #settings-saved-msg { font-size: 13px; color: #16a34a; margin-top: 10px; display: none; }
+
+  /* ---------- Price List ---------- */
+  .price-hint { font-size: 13px; color: #666; margin-bottom: 14px; max-width: 680px; line-height: 1.5; }
+  .price-table-wrap { background: white; border-radius: 10px; padding: 10px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .price-table { border-collapse: collapse; min-width: 100%; }
+  .price-table th, .price-table td { border-bottom: 1px solid #eee; padding: 10px 12px; text-align: left; vertical-align: top; font-size: 13px; }
+  .price-table th { background: #f8fafc; min-width: 140px; }
+  .price-th-name, .price-item-name { font-weight: 600; }
+  .price-th-desc, .price-item-note { font-size: 11px; color: #888; margin-top: 2px; max-width: 200px; white-space: pre-wrap; }
+  .price-th-actions { margin-top: 6px; font-size: 11px; font-weight: normal; }
+  .price-link { color: #2563eb; cursor: pointer; margin-right: 8px; text-decoration: underline; }
+  .price-link.danger { color: #b91c1c; }
+  .price-cell { width: 120px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+  #price-actions-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  #price-saved-msg { font-size: 13px; color: #16a34a; display: none; }
 
   /* ---------- Chat section ---------- */
   #chat-container { flex: 1; display: flex; min-height: 0; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -137,6 +153,7 @@
   <h2 id="store-name-label">My Store</h2>
   <div class="nav-item active" data-section="chat">Chat</div>
   <div class="nav-item" data-section="faq">AI Training Centre</div>
+  <div class="nav-item" data-section="prices">Price List</div>
   <div class="nav-item" data-section="promotions">Promotions</div>
   <div class="nav-item" data-section="customers">Customers</div>
   <div class="nav-item" data-section="settings">Settings</div>
@@ -166,6 +183,23 @@
       </div>
       <div id="faq-list"></div>
       <div id="empty-state" style="display:none;">Nothing trained yet — click "Add Training" to create one.</div>
+    </div>
+
+    <div class="section" data-section="prices">
+      <div class="page-header">
+        <h2>Price List</h2>
+        <div style="display:flex; gap:8px;">
+          <button class="btn secondary" id="add-variant-btn">+ Add Type</button>
+          <button class="btn" id="add-item-btn">+ Add Service</button>
+        </div>
+      </div>
+      <div class="price-hint">Add your types (for example Sedan, SUV) and your services (for example Normal Wash, Coating), then fill in the prices. The AI will look prices up here instead of guessing. Click "Save Prices" before adding or removing types or services, otherwise unsaved prices will be lost.</div>
+      <div id="price-table-wrap" class="price-table-wrap"></div>
+      <div id="price-empty-state" style="display:none;"></div>
+      <div id="price-actions-row">
+        <button class="btn" id="price-save-btn">Save Prices</button>
+        <span id="price-saved-msg">Saved.</span>
+      </div>
     </div>
 
     <div class="section" data-section="promotions">
@@ -241,6 +275,21 @@
     <div id="faq-modal-actions">
       <button class="btn secondary" id="faq-cancel-btn">Cancel</button>
       <button class="btn" id="faq-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Price type / service modal -->
+<div id="price-modal-overlay">
+  <div id="price-modal">
+    <h3 id="price-modal-title">Add Type</h3>
+    <span class="field-label" id="price-modal-name-label">Name</span>
+    <input type="text" id="price-modal-name">
+    <span class="field-label" id="price-modal-extra-label">Details</span>
+    <textarea id="price-modal-extra"></textarea>
+    <div id="price-modal-actions">
+      <button class="btn secondary" id="price-modal-cancel-btn">Cancel</button>
+      <button class="btn" id="price-modal-save-btn">Save</button>
     </div>
   </div>
 </div>
@@ -332,6 +381,7 @@
       document.getElementById('mobile-title').textContent = item.textContent.trim();
       document.getElementById('sidebar').classList.remove('open');
       if (target === 'settings') loadSettings();
+      if (target === 'prices') loadPriceList();
     });
   });
 
@@ -432,6 +482,225 @@
   }
 
   loadFaqs();
+
+  // ---------- Price List ----------
+
+  let priceVariants = [];
+  let priceItems = [];
+  let priceValues = {}; // "itemId:variantId" -> price text
+  let priceModalMode = null; // 'variant' or 'item'
+  let priceModalEditingId = null;
+
+  async function loadPriceList() {
+    const [variantsRes, itemsRes, valuesRes] = await Promise.all([
+      supabaseClient.from('price_variants').select('*').eq('store_id', storeId).order('created_at'),
+      supabaseClient.from('price_items').select('*').eq('store_id', storeId).order('created_at'),
+      supabaseClient.from('price_values').select('*').eq('store_id', storeId),
+    ]);
+
+    priceVariants = variantsRes.data || [];
+    priceItems = itemsRes.data || [];
+    priceValues = {};
+    (valuesRes.data || []).forEach((v) => {
+      priceValues[v.item_id + ':' + v.variant_id] = v.price_text;
+    });
+
+    renderPriceTable();
+  }
+
+  function renderPriceTable() {
+    const wrap = document.getElementById('price-table-wrap');
+    const emptyEl = document.getElementById('price-empty-state');
+    const actionsRow = document.getElementById('price-actions-row');
+
+    if (priceVariants.length === 0 && priceItems.length === 0) {
+      wrap.style.display = 'none';
+      actionsRow.style.display = 'none';
+      emptyEl.style.display = 'block';
+      emptyEl.textContent = 'Nothing here yet. Start with "+ Add Type" (for example Sedan, SUV), then "+ Add Service" (for example Normal Wash, Coating).';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    wrap.style.display = 'block';
+    actionsRow.style.display = 'flex';
+    wrap.innerHTML = '';
+
+    const table = document.createElement('table');
+    table.className = 'price-table';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    const thService = document.createElement('th');
+    thService.textContent = 'Service';
+    headRow.appendChild(thService);
+
+    priceVariants.forEach((variant) => {
+      const th = document.createElement('th');
+      th.innerHTML =
+        '<div class="price-th-name">' + escapeHtml(variant.name) + '</div>' +
+        (variant.description ? '<div class="price-th-desc">' + escapeHtml(variant.description) + '</div>' : '') +
+        '<div class="price-th-actions"><span class="price-link edit-variant">Edit</span><span class="price-link danger delete-variant">Delete</span></div>';
+      th.querySelector('.edit-variant').addEventListener('click', () => openPriceModal('variant', variant));
+      th.querySelector('.delete-variant').addEventListener('click', () => deleteVariant(variant));
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    priceItems.forEach((item) => {
+      const tr = document.createElement('tr');
+
+      const tdName = document.createElement('td');
+      tdName.innerHTML =
+        '<div class="price-item-name">' + escapeHtml(item.name) + '</div>' +
+        (item.note ? '<div class="price-item-note">' + escapeHtml(item.note) + '</div>' : '') +
+        '<div class="price-th-actions"><span class="price-link edit-item">Edit</span><span class="price-link danger delete-item">Delete</span></div>';
+      tdName.querySelector('.edit-item').addEventListener('click', () => openPriceModal('item', item));
+      tdName.querySelector('.delete-item').addEventListener('click', () => deleteItem(item));
+      tr.appendChild(tdName);
+
+      priceVariants.forEach((variant) => {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'price-cell';
+        input.placeholder = 'e.g. RM80';
+        input.dataset.item = item.id;
+        input.dataset.variant = variant.id;
+        input.value = priceValues[item.id + ':' + variant.id] || '';
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    if (priceVariants.length === 0 || priceItems.length === 0) {
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:12px;color:#888;padding:10px 12px;';
+      hint.textContent = priceVariants.length === 0
+        ? 'Add at least one type to start filling in prices.'
+        : 'Add at least one service to start filling in prices.';
+      wrap.appendChild(hint);
+    }
+  }
+
+  function openPriceModal(mode, record) {
+    priceModalMode = mode;
+    priceModalEditingId = record ? record.id : null;
+    const isVariant = mode === 'variant';
+
+    document.getElementById('price-modal-title').textContent = (record ? 'Edit ' : 'Add ') + (isVariant ? 'Type' : 'Service');
+    document.getElementById('price-modal-name-label').textContent = isVariant
+      ? 'Type name (for example Sedan, SUV)'
+      : 'Service name (for example Normal Wash, Coating)';
+    document.getElementById('price-modal-extra-label').textContent = isVariant
+      ? 'Example models (optional — helps the AI sort cars into this type)'
+      : 'Note shown with the price (optional)';
+    document.getElementById('price-modal-extra').placeholder = isVariant
+      ? 'e.g. Honda City, Toyota Vios, Perodua Bezza'
+      : 'e.g. Includes interior vacuum';
+    document.getElementById('price-modal-name').value = record ? record.name : '';
+    document.getElementById('price-modal-extra').value = record ? ((isVariant ? record.description : record.note) || '') : '';
+    document.getElementById('price-modal-overlay').classList.add('open');
+  }
+
+  function closePriceModal() {
+    document.getElementById('price-modal-overlay').classList.remove('open');
+  }
+
+  document.getElementById('add-variant-btn').addEventListener('click', () => openPriceModal('variant', null));
+  document.getElementById('add-item-btn').addEventListener('click', () => openPriceModal('item', null));
+  document.getElementById('price-modal-cancel-btn').addEventListener('click', closePriceModal);
+
+  document.getElementById('price-modal-save-btn').addEventListener('click', async () => {
+    const name = document.getElementById('price-modal-name').value.trim();
+    const extra = document.getElementById('price-modal-extra').value.trim();
+    if (!name) {
+      alert('Please enter a name.');
+      return;
+    }
+
+    const isVariant = priceModalMode === 'variant';
+    const table = isVariant ? 'price_variants' : 'price_items';
+    const payload = { name: name };
+    payload[isVariant ? 'description' : 'note'] = extra || null;
+
+    let result;
+    if (priceModalEditingId) {
+      result = await supabaseClient.from(table).update(payload).eq('id', priceModalEditingId);
+    } else {
+      payload.store_id = storeId;
+      result = await supabaseClient.from(table).insert(payload);
+    }
+
+    if (result.error) {
+      alert(result.error.message.indexOf('duplicate') !== -1
+        ? 'That name already exists.'
+        : 'Could not save: ' + result.error.message);
+      return;
+    }
+
+    closePriceModal();
+    loadPriceList();
+  });
+
+  async function deleteVariant(variant) {
+    if (!confirm('Delete type "' + variant.name + '" and all its prices?')) return;
+    await supabaseClient.from('price_variants').delete().eq('id', variant.id);
+    loadPriceList();
+  }
+
+  async function deleteItem(item) {
+    if (!confirm('Delete service "' + item.name + '" and all its prices?')) return;
+    await supabaseClient.from('price_items').delete().eq('id', item.id);
+    loadPriceList();
+  }
+
+  document.getElementById('price-save-btn').addEventListener('click', async () => {
+    const upserts = [];
+    const deletes = [];
+
+    document.querySelectorAll('.price-cell').forEach((input) => {
+      const key = input.dataset.item + ':' + input.dataset.variant;
+      const value = input.value.trim();
+      if (value) {
+        if (priceValues[key] !== value) {
+          upserts.push({
+            store_id: storeId,
+            item_id: input.dataset.item,
+            variant_id: input.dataset.variant,
+            price_text: value,
+          });
+        }
+      } else if (priceValues[key] !== undefined) {
+        deletes.push({ item_id: input.dataset.item, variant_id: input.dataset.variant });
+      }
+    });
+
+    if (upserts.length > 0) {
+      const { error } = await supabaseClient.from('price_values').upsert(upserts, { onConflict: 'item_id,variant_id' });
+      if (error) {
+        alert('Could not save prices: ' + error.message);
+        return;
+      }
+    }
+
+    for (const d of deletes) {
+      await supabaseClient.from('price_values').delete().eq('item_id', d.item_id).eq('variant_id', d.variant_id);
+    }
+
+    const savedMsg = document.getElementById('price-saved-msg');
+    savedMsg.style.display = 'inline';
+    setTimeout(() => { savedMsg.style.display = 'none'; }, 2000);
+    loadPriceList();
+  });
+
+  loadPriceList();
 
   // ---------- Chat ----------
 
