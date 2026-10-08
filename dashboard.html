@@ -87,6 +87,10 @@
   .toggle-switch input:checked + .toggle-slider { background: #2563eb; }
   .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
   .plan-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #475569; }
+  .usage-bar { height: 8px; background: #e2e8f0; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+  .usage-bar-fill { height: 100%; width: 0; background: #2563eb; transition: width 0.3s; }
+  .usage-bar-fill.warn { background: #f59e0b; }
+  .usage-bar-fill.full { background: #dc2626; }
   #settings-saved-msg { font-size: 13px; color: #16a34a; margin-top: 10px; display: none; }
 
   /* ---------- Chat section ---------- */
@@ -158,10 +162,10 @@
     <div class="section" data-section="faq">
       <div class="page-header">
         <h2>AI Training Centre</h2>
-        <button class="btn" id="add-faq-btn">+ AI Training</button>
+        <button class="btn" id="add-faq-btn">+ Add Training</button>
       </div>
       <div id="faq-list"></div>
-      <div id="empty-state" style="display:none;">No AI Answer yet — click "AI Training" to create one.</div>
+      <div id="empty-state" style="display:none;">Nothing trained yet — click "Add Training" to create one.</div>
     </div>
 
     <div class="section" data-section="promotions">
@@ -212,9 +216,12 @@
         </div>
 
         <div class="settings-field">
-          <label>Monthly Auto-Reply Limit</label>
-          <div class="plan-box" id="settings-plan-box">Loading...</div>
-          <div class="hint">This is set by your plan. Contact us to upgrade.</div>
+          <label>Monthly Auto-Reply Usage</label>
+          <div class="plan-box">
+            <div id="settings-usage-text">Loading...</div>
+            <div class="usage-bar"><div class="usage-bar-fill" id="settings-usage-fill"></div></div>
+          </div>
+          <div class="hint" id="settings-usage-hint">Resets on the 1st of each month. Replies you type yourself are not counted.</div>
         </div>
 
         <button class="btn" id="settings-save-btn">Save Settings</button>
@@ -225,10 +232,10 @@
   </div>
 </div>
 
-<!-- FAQ modal -->
+<!-- AI Training modal -->
 <div id="faq-modal-overlay">
   <div id="faq-modal">
-    <h3 id="faq-modal-title">AI Training</h3>
+    <h3 id="faq-modal-title">Add Training</h3>
     <input type="text" id="faq-question-input" placeholder="What might a customer ask?">
     <textarea id="faq-answer-input" placeholder="Standard answer"></textarea>
     <div id="faq-modal-actions">
@@ -324,6 +331,7 @@
       document.querySelector('.section[data-section="' + target + '"]').classList.add('active');
       document.getElementById('mobile-title').textContent = item.textContent.trim();
       document.getElementById('sidebar').classList.remove('open');
+      if (target === 'settings') loadSettings();
     });
   });
 
@@ -381,7 +389,7 @@
 
   function openFaqModal(faq) {
     editingFaqId = faq && faq.id ? faq.id : null;
-    document.getElementById('faq-modal-title').textContent = editingFaqId ? 'Edit FAQ' : 'Add FAQ';
+    document.getElementById('faq-modal-title').textContent = editingFaqId ? 'Edit Training' : 'Add Training';
     document.getElementById('faq-question-input').value = faq ? faq.question : '';
     document.getElementById('faq-answer-input').value = faq ? faq.answer : '';
     document.getElementById('faq-modal-overlay').classList.add('open');
@@ -418,7 +426,7 @@
   });
 
   async function deleteFaq(id) {
-    if (!confirm('Delete this FAQ?')) return;
+    if (!confirm('Delete this training entry?')) return;
     await supabaseClient.from('store_faqs').delete().eq('id', id);
     loadFaqs();
   }
@@ -784,7 +792,22 @@
     document.getElementById('settings-ai-enabled').checked = data.ai_mode_enabled !== false;
     document.getElementById('settings-ai-enabled-label').textContent = data.ai_mode_enabled !== false ? 'Enabled' : 'Disabled';
     document.getElementById('settings-wait-time').value = data.human_handoff_wait_seconds || 60;
-    document.getElementById('settings-plan-box').textContent = (data.monthly_reply_limit || 0) + ' auto-replies / month';
+
+    const limit = data.monthly_reply_limit || 0;
+    const { data: used } = await supabaseClient.rpc('get_monthly_usage', { p_store_id: storeId });
+    const usedCount = used || 0;
+    const pct = limit > 0 ? Math.min(100, Math.round((usedCount / limit) * 100)) : 0;
+
+    document.getElementById('settings-usage-text').textContent =
+      usedCount + ' / ' + limit + ' auto-replies used this month';
+
+    const fillEl = document.getElementById('settings-usage-fill');
+    fillEl.style.width = pct + '%';
+    fillEl.className = 'usage-bar-fill' + (pct >= 100 ? ' full' : pct >= 80 ? ' warn' : '');
+
+    document.getElementById('settings-usage-hint').textContent = pct >= 100
+      ? 'Limit reached — new customer messages now go straight to your team until next month or a plan upgrade.'
+      : 'Resets on the 1st of each month. Replies you type yourself are not counted.';
   }
 
   document.getElementById('settings-ai-enabled').addEventListener('change', (e) => {
