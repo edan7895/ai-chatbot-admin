@@ -73,7 +73,7 @@
   .history-msg.user { background: #2563eb; color: white; margin-left: auto; }
   .history-msg.bot { background: white; border: 1px solid #ddd; }
 
-  #empty-state, #promo-empty-state, #customer-empty-state, #price-empty-state { color: #888; font-size: 14px; }
+  #empty-state, #promo-empty-state, #customer-empty-state, #price-empty-state { color: #888; font-size: 14px; max-width: 680px; line-height: 1.5; }
 
   .settings-card { background: white; border-radius: 10px; padding: 20px; max-width: 480px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .settings-field { margin-bottom: 18px; }
@@ -108,6 +108,7 @@
   .price-cell { width: 120px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
   #price-actions-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
   #price-saved-msg { font-size: 13px; color: #16a34a; display: none; }
+  #price-setup-saved-msg { font-size: 13px; color: #16a34a; margin-left: 10px; display: none; }
 
   /* ---------- Chat section ---------- */
   #chat-container { flex: 1; display: flex; min-height: 0; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -189,12 +190,29 @@
     <div class="section" data-section="prices">
       <div class="page-header">
         <h2>Price List</h2>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn secondary" id="fixed-prices-btn" style="display:none;">Fixed prices</button>
           <button class="btn secondary" id="add-variant-btn">+ Add Type</button>
           <button class="btn" id="add-item-btn">+ Add Service</button>
         </div>
       </div>
-      <div class="price-hint">Add your types (for example Sedan, SUV) and your services (for example Normal Wash, Coating), then fill in the prices. The AI will look prices up here instead of guessing. Click "Save Prices" before adding or removing types or services, otherwise unsaved prices will be lost.</div>
+
+      <div class="settings-card" style="margin-bottom:16px; max-width:680px;">
+        <div class="settings-field">
+          <label for="price-depends-on">What do your prices depend on? (optional)</label>
+          <input type="text" id="price-depends-on" placeholder="e.g. car type, company size, patient type">
+          <div class="hint">Leave this blank if each service has one fixed price. Otherwise add a type below for each option (for example Sedan and SUV).</div>
+        </div>
+        <div class="settings-field">
+          <label for="price-trigger-words">Words customers use for it (optional)</label>
+          <input type="text" id="price-trigger-words" placeholder="e.g. car, kereta, 车">
+          <div class="hint">Comma separated. Helps the system notice when a customer is talking about it. Your service names, type names and the examples you write for each type are picked up automatically.</div>
+        </div>
+        <button class="btn" id="price-setup-save-btn">Save Setup</button>
+        <span id="price-setup-saved-msg">Saved.</span>
+      </div>
+
+      <div class="price-hint">List what you sell as services, then fill in the prices. If your prices depend on something (for example car type or company size), add a type for each option. If every service has one fixed price, click "Fixed prices". The AI looks prices up here instead of guessing. Click "Save Prices" before adding or removing types or services, otherwise unsaved prices will be lost.</div>
       <div id="price-table-wrap" class="price-table-wrap"></div>
       <div id="price-empty-state" style="display:none;"></div>
       <div id="price-actions-row">
@@ -513,10 +531,11 @@
   let priceModalEditingId = null;
 
   async function loadPriceList() {
-    const [variantsRes, itemsRes, valuesRes] = await Promise.all([
+    const [variantsRes, itemsRes, valuesRes, setupRes] = await Promise.all([
       supabaseClient.from('price_variants').select('*').eq('store_id', storeId).order('created_at'),
       supabaseClient.from('price_items').select('*').eq('store_id', storeId).order('created_at'),
       supabaseClient.from('price_values').select('*').eq('store_id', storeId),
+      supabaseClient.from('stores').select('price_depends_on, price_trigger_words').eq('id', storeId).single(),
     ]);
 
     priceVariants = variantsRes.data || [];
@@ -526,8 +545,44 @@
       priceValues[v.item_id + ':' + v.variant_id] = v.price_text;
     });
 
+    if (setupRes.data) {
+      document.getElementById('price-depends-on').value = setupRes.data.price_depends_on || '';
+      document.getElementById('price-trigger-words').value = setupRes.data.price_trigger_words || '';
+    }
+
+    document.getElementById('fixed-prices-btn').style.display = priceVariants.length === 0 ? 'inline-block' : 'none';
+
     renderPriceTable();
   }
+
+  document.getElementById('price-setup-save-btn').addEventListener('click', async () => {
+    const dependsOn = document.getElementById('price-depends-on').value.trim();
+    const triggerWords = document.getElementById('price-trigger-words').value.trim();
+
+    const { error } = await supabaseClient.from('stores').update({
+      price_depends_on: dependsOn || null,
+      price_trigger_words: triggerWords || null,
+    }).eq('id', storeId);
+
+    if (error) {
+      alert('Could not save: ' + error.message);
+      return;
+    }
+
+    const savedMsg = document.getElementById('price-setup-saved-msg');
+    savedMsg.style.display = 'inline';
+    setTimeout(() => { savedMsg.style.display = 'none'; }, 2000);
+  });
+
+  document.getElementById('fixed-prices-btn').addEventListener('click', async () => {
+    if (!confirm('Use one fixed price per service? This creates a single "Standard price" column.')) return;
+    const { error } = await supabaseClient.from('price_variants').insert({ store_id: storeId, name: 'Standard price' });
+    if (error) {
+      alert('Could not set this up: ' + error.message);
+      return;
+    }
+    loadPriceList();
+  });
 
   function renderPriceTable() {
     const wrap = document.getElementById('price-table-wrap');
@@ -538,7 +593,7 @@
       wrap.style.display = 'none';
       actionsRow.style.display = 'none';
       emptyEl.style.display = 'block';
-      emptyEl.textContent = 'Nothing here yet. Start with "+ Add Type" (for example Sedan, SUV), then "+ Add Service" (for example Normal Wash, Coating).';
+      emptyEl.textContent = 'Nothing here yet. Click "+ Add Service" to add what you sell. If your prices depend on something (for example car type or company size), also add a type for each option with "+ Add Type". If every service has one fixed price, click "Fixed prices".';
       return;
     }
 
@@ -604,7 +659,7 @@
       const hint = document.createElement('div');
       hint.style.cssText = 'font-size:12px;color:#888;padding:10px 12px;';
       hint.textContent = priceVariants.length === 0
-        ? 'Add at least one type to start filling in prices.'
+        ? 'Add at least one type, or click "Fixed prices", to start filling in prices.'
         : 'Add at least one service to start filling in prices.';
       wrap.appendChild(hint);
     }
@@ -617,13 +672,13 @@
 
     document.getElementById('price-modal-title').textContent = (record ? 'Edit ' : 'Add ') + (isVariant ? 'Type' : 'Service');
     document.getElementById('price-modal-name-label').textContent = isVariant
-      ? 'Type name (for example Sedan, SUV)'
-      : 'Service name (for example Normal Wash, Coating)';
+      ? 'Type name (for example Sedan, SUV, Small company)'
+      : 'Service name (for example Normal Wash, Scaling, Audit)';
     document.getElementById('price-modal-extra-label').textContent = isVariant
-      ? 'Example models (optional — helps the AI sort cars into this type)'
+      ? 'Examples or rules (optional — helps the AI sort customers into this type)'
       : 'Note shown with the price (optional)';
     document.getElementById('price-modal-extra').placeholder = isVariant
-      ? 'e.g. Honda City, Toyota Vios, Perodua Bezza'
+      ? 'e.g. Honda City, Toyota Vios — or: up to 10 employees'
       : 'e.g. Includes interior vacuum';
     document.getElementById('price-modal-name').value = record ? record.name : '';
     document.getElementById('price-modal-extra').value = record ? ((isVariant ? record.description : record.note) || '') : '';
