@@ -133,6 +133,7 @@
   .chat-msg.reply.human { background: #16a34a; }
   .chat-msg-label { font-size: 10px; opacity: 0.8; margin-bottom: 2px; }
   .save-faq-link { font-size: 11px; color: #2563eb; cursor: pointer; margin-top: 3px; text-align: right; text-decoration: underline; }
+  .auto-learn-label { font-size: 11px; color: #888; margin-top: 3px; text-align: right; }
   #chat-window-input-row { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e5e7eb; }
   #chat-reply-input { flex: 1; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
   #chat-empty-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px; }
@@ -382,6 +383,7 @@
       document.getElementById('sidebar').classList.remove('open');
       if (target === 'settings') loadSettings();
       if (target === 'prices') loadPriceList();
+      if (target === 'faq') loadFaqs();
     });
   });
 
@@ -461,13 +463,32 @@
     }
 
     if (editingFaqId) {
-      await supabaseClient.from('store_faqs').update({ question, answer }).eq('id', editingFaqId);
+      const { error } = await supabaseClient.from('store_faqs').update({ question, answer }).eq('id', editingFaqId);
+      if (error) {
+        alert('Could not save: ' + error.message);
+        return;
+      }
     } else {
-      await fetch(API_URL + '/faq', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_id: storeId, question, answer }),
-      });
+      let res;
+      try {
+        res = await fetch(API_URL + '/faq', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ store_id: storeId, question, answer }),
+        });
+      } catch (e) {
+        alert('Could not reach the server. Please try again in a minute.');
+        return;
+      }
+      if (!res.ok) {
+        let message = 'Could not save. Please try again in a minute.';
+        try {
+          const body = await res.json();
+          if (body && typeof body.detail === 'string') message = body.detail;
+        } catch (e) {}
+        alert(message);
+        return;
+      }
     }
 
     closeFaqModal();
@@ -787,8 +808,15 @@
 
   async function loadMessages() {
     if (!selectedCustomerId) return;
-    const res = await fetch(API_URL + '/chat/history?store_id=' + storeId + '&customer_id=' + selectedCustomerId);
-    const data = await res.json();
+
+    const [historyRes, autoRes] = await Promise.all([
+      fetch(API_URL + '/chat/history?store_id=' + storeId + '&customer_id=' + selectedCustomerId),
+      supabaseClient.from('store_faqs').select('question').eq('store_id', storeId).eq('source', 'auto'),
+    ]);
+    const data = await historyRes.json();
+
+    // Questions the system already learned by itself (saved in the AI Training Centre)
+    const autoLearned = new Set(((autoRes && autoRes.data) || []).map((r) => (r.question || '').trim().toLowerCase()));
 
     const messagesEl = document.getElementById('chat-window-messages');
     if (!messagesEl) return;
@@ -814,13 +842,20 @@
         rowWrap.appendChild(bubble);
 
         if (lastCustomerMessage) {
-          const questionForFaq = lastCustomerMessage;
-          const answerForFaq = row.ai_response;
-          const saveLink = document.createElement('div');
-          saveLink.className = 'save-faq-link';
-          saveLink.textContent = 'AI Training';
-          saveLink.addEventListener('click', () => saveAsFaq(questionForFaq, answerForFaq));
-          rowWrap.appendChild(saveLink);
+          if (autoLearned.has(lastCustomerMessage.trim().toLowerCase())) {
+            const autoLabel = document.createElement('div');
+            autoLabel.className = 'auto-learn-label';
+            autoLabel.textContent = 'AI Auto Learning';
+            rowWrap.appendChild(autoLabel);
+          } else {
+            const questionForFaq = lastCustomerMessage;
+            const answerForFaq = row.ai_response;
+            const saveLink = document.createElement('div');
+            saveLink.className = 'save-faq-link';
+            saveLink.textContent = 'AI Training';
+            saveLink.addEventListener('click', () => saveAsFaq(questionForFaq, answerForFaq));
+            rowWrap.appendChild(saveLink);
+          }
         }
 
         messagesEl.appendChild(rowWrap);
