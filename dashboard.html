@@ -206,13 +206,13 @@
         <div class="settings-field">
           <label for="price-trigger-words">Words customers use for it (optional)</label>
           <input type="text" id="price-trigger-words" placeholder="e.g. car, kereta, 车">
-          <div class="hint">Comma separated. Helps the system notice when a customer is talking about it. Your service names, type names and the examples you write for each type are picked up automatically.</div>
+          <div class="hint">Comma separated. Helps the system notice when a customer is talking about it. Your service names, their "Also called" names, type names and the examples you write for each type are picked up automatically.</div>
         </div>
         <button class="btn" id="price-setup-save-btn">Save Setup</button>
         <span id="price-setup-saved-msg">Saved.</span>
       </div>
 
-      <div class="price-hint">List what you sell as services, then fill in the prices. If your prices depend on something (for example car type or company size), add a type for each option. If every service has one fixed price, click "Fixed prices". The AI looks prices up here instead of guessing. Click "Save Prices" before adding or removing types or services, otherwise unsaved prices will be lost.</div>
+      <div class="price-hint">List what you sell as services, then fill in the prices. For each service, add the other names customers use in "Also called" (for example "normal wash" for Premier Wash), so the AI recognises it. If your prices depend on something (for example car type or company size), add a type for each option. If every service has one fixed price, click "Fixed prices". The AI looks prices up here instead of guessing. Click "Save Prices" before adding or removing types or services, otherwise unsaved prices will be lost.</div>
       <div id="price-table-wrap" class="price-table-wrap"></div>
       <div id="price-empty-state" style="display:none;"></div>
       <div id="price-actions-row">
@@ -306,6 +306,10 @@
     <input type="text" id="price-modal-name">
     <span class="field-label" id="price-modal-extra-label">Details</span>
     <textarea id="price-modal-extra"></textarea>
+    <div id="price-modal-aliases-wrap" style="display:none;">
+      <span class="field-label">Also called (optional) — other names customers use for this service, comma separated</span>
+      <input type="text" id="price-modal-aliases" placeholder="e.g. normal wash, basic wash, cuci biasa">
+    </div>
     <div id="price-modal-actions">
       <button class="btn secondary" id="price-modal-cancel-btn">Cancel</button>
       <button class="btn" id="price-modal-save-btn">Save</button>
@@ -631,6 +635,7 @@
       const tdName = document.createElement('td');
       tdName.innerHTML =
         '<div class="price-item-name">' + escapeHtml(item.name) + '</div>' +
+        (item.aliases ? '<div class="price-item-note">Also called: ' + escapeHtml(item.aliases) + '</div>' : '') +
         (item.note ? '<div class="price-item-note">' + escapeHtml(item.note) + '</div>' : '') +
         '<div class="price-th-actions"><span class="price-link edit-item">Edit</span><span class="price-link danger delete-item">Delete</span></div>';
       tdName.querySelector('.edit-item').addEventListener('click', () => openPriceModal('item', item));
@@ -682,6 +687,10 @@
       : 'e.g. Includes interior vacuum';
     document.getElementById('price-modal-name').value = record ? record.name : '';
     document.getElementById('price-modal-extra').value = record ? ((isVariant ? record.description : record.note) || '') : '';
+
+    document.getElementById('price-modal-aliases-wrap').style.display = isVariant ? 'none' : 'block';
+    document.getElementById('price-modal-aliases').value = (!isVariant && record) ? (record.aliases || '') : '';
+
     document.getElementById('price-modal-overlay').classList.add('open');
   }
 
@@ -705,6 +714,9 @@
     const table = isVariant ? 'price_variants' : 'price_items';
     const payload = { name: name };
     payload[isVariant ? 'description' : 'note'] = extra || null;
+    if (!isVariant) {
+      payload.aliases = document.getElementById('price-modal-aliases').value.trim() || null;
+    }
 
     let result;
     if (priceModalEditingId) {
